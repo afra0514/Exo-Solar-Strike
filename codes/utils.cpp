@@ -45,7 +45,7 @@ void drawBackground() {
     glDisable(GL_TEXTURE_2D); 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glPointSize(1.8); 
+    glPointSize(0.9); 
     glBegin(GL_POINTS);
     float timeVal = glutGet(GLUT_ELAPSED_TIME) * 0.005f;
     for(int i=0; i<STAR_COUNT; i++) {
