@@ -2,9 +2,28 @@
 #include <string.h>
 #include <math.h>
 #include <stdio.h> 
+#include <GL/glut.h>
+
 extern int WIDTH, HEIGHT;
 extern int currentInfoIndex;
 extern float infoZoom; 
+ 
+extern void drawTexturedPlanet(float radius, int textureIndex);
+extern void drawGlassBox(float x, float y, float w, float h);
+extern void drawStrokeText(float x, float y, float z, const char* string, float scale, float r, float g, float b, float lineWidth);
+extern void drawBackground();
+
+#define TEX_SUN 0
+#define TEX_MERCURY 1
+#define TEX_VENUS 2
+#define TEX_EARTH 3
+#define TEX_MOON 4
+#define TEX_MARS 5
+#define TEX_JUPITER 6
+#define TEX_SATURN 7
+#define TEX_URANUS 8
+#define TEX_NEPTUNE 9
+
 struct CelestialBodyInfo {
     const char* name; const char* type; const char* realRadius;
     const char* gravity; const char* realTemp; const char* distFromSun;
@@ -12,6 +31,7 @@ struct CelestialBodyInfo {
     const char* description;
     float r, g, b; bool hasRing; float simSize;
 }; 
+
 CelestialBodyInfo db[] = {
     {"SUN", "Yellow Dwarf (G2V)", "696,340 km", "274 m/s^2", "5,500 C", "0 km", "230 M Years", "25 Days", "8 Planets", "The heart of our solar system. Contains 99.8% of the system's total mass.", 1.0, 0.6, 0.0, false, 3.5},
     {"MERCURY", "Terrestrial Planet", "2,439 km", "3.7 m/s^2", "167 C", "58 million km", "88 Days", "59 Days", "0", "Smallest planet. It shrinks slightly as its iron core cools down.", 0.7, 0.6, 0.5, false, 0.8},
@@ -25,6 +45,7 @@ CelestialBodyInfo db[] = {
     {"NEPTUNE", "Ice Giant", "24,622 km", "11.15 m/s^2", "-200 C", "4.5 billion km", "165 Years", "16h 6m", "14", "Has supersonic winds reaching 2,100 km/h. First planet found by math.", 0.1, 0.1, 0.7, false, 1.6},
     {"ASTEROID BELT", "Circumstellar Disc", "1 AU Width", "N/A", "-73 C", "2.2 - 3.2 AU", "3 - 6 Years", "Varies", "Millions", "A torus-shaped region between Mars and Jupiter containing many irregular bodies.", 0.6, 0.6, 0.6, false, 2.0}
 }; 
+
 void drawInfoRow(float x, float y, const char* label, const char* value) {
     glColor3f(0.0f, 1.0f, 1.0f);  
     glRasterPos2f(x, y);
@@ -33,16 +54,22 @@ void drawInfoRow(float x, float y, const char* label, const char* value) {
     glRasterPos2f(x + 130, y);
     for (const char* c = value; *c != '\0'; c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
 } 
+ 
 void drawInfoPreview(int index) {
     if(index < 0 || index > 10) return;
-    glEnable(GL_LIGHTING); glEnable(GL_DEPTH_TEST); glEnable(GL_COLOR_MATERIAL);
-    GLfloat no_emit[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    glMaterialfv(GL_FRONT, GL_EMISSION, no_emit); 
+ 
+    glDisable(GL_LIGHTING); 
+    glEnable(GL_DEPTH_TEST); 
+    glEnable(GL_COLOR_MATERIAL);
+    glColor3f(1.0f, 1.0f, 1.0f);  
+
     static float rot = 0; rot += 0.5f; 
     glPushMatrix();
     glScalef(infoZoom, infoZoom, infoZoom); 
-    glRotatef(20, 1, 0, 0); glRotatef(rot, 0, 1, 0);
-    if (index == 10) {
+    glRotatef(20, 1, 0, 0); 
+    glRotatef(rot, 0, 1, 0);
+
+    if (index == 10) {  
         glDisable(GL_TEXTURE_2D);
         for(int i=0; i<150; i++) {
             glPushMatrix(); 
@@ -50,27 +77,41 @@ void drawInfoPreview(int index) {
             float r = 2.5 + ((rand()%10)/10.0);
             glTranslatef(cos(a)*r, ((rand()%10)/20.0), sin(a)*r); 
             glScalef(0.05, 0.05, 0.05);
-            glColor3f(0.6, 0.5, 0.4); glutSolidDodecahedron(); 
+            glColor3f(0.6, 0.5, 0.4); 
+            glutSolidDodecahedron(); 
             glPopMatrix();
         }
     } else {
         int texID = 0; float s = 1.0;
         switch(index) {
-            case 0: texID = TEX_SUN; s = 3.5; break; case 1: texID = TEX_MERCURY; s = 0.8; break;
-            case 2: texID = TEX_VENUS; s = 1.1; break; case 3: texID = TEX_EARTH; s = 1.2; break;
-            case 4: texID = TEX_MOON; s = 0.5; break; case 5: texID = TEX_MARS; s = 0.9; break;
-            case 6: texID = TEX_JUPITER; s = 2.5; break; case 7: texID = TEX_SATURN; s = 2.1; break;
-            case 8: texID = TEX_URANUS; s = 1.6; break; case 9: texID = TEX_NEPTUNE; s = 1.6; break;
+            case 0: texID = TEX_SUN; s = 3.5; break; 
+            case 1: texID = TEX_MERCURY; s = 0.8; break;
+            case 2: texID = TEX_VENUS; s = 1.1; break; 
+            case 3: texID = TEX_EARTH; s = 1.2; break;
+            case 4: texID = TEX_MOON; s = 0.5; break; 
+            case 5: texID = TEX_MARS; s = 0.9; break;
+            case 6: texID = TEX_JUPITER; s = 2.5; break; 
+            case 7: texID = TEX_SATURN; s = 2.1; break;
+            case 8: texID = TEX_URANUS; s = 1.6; break; 
+            case 9: texID = TEX_NEPTUNE; s = 1.6; break;
         }
         drawTexturedPlanet(s, texID);
+        
         if (index == 7) { 
-            glDisable(GL_LIGHTING); glEnable(GL_BLEND); glDisable(GL_TEXTURE_2D); 
-            glColor4f(0.8, 0.7, 0.5, 0.6); glRotatef(80, 1, 0, 0); 
-            glutSolidTorus(0.25, s + 1.2, 30, 40); glDisable(GL_BLEND); glEnable(GL_LIGHTING); 
+            glEnable(GL_BLEND); glDisable(GL_TEXTURE_2D); 
+            glColor4f(0.8, 0.7, 0.5, 0.6); 
+            glPushMatrix();
+            glRotatef(80, 1, 0, 0); 
+            glutSolidTorus(0.25, s + 1.2, 30, 40); 
+            glPopMatrix();
+            glDisable(GL_BLEND);
         }
     }
-    glPopMatrix(); glDisable(GL_COLOR_MATERIAL);
+    glPopMatrix(); 
+    glDisable(GL_COLOR_MATERIAL);
+    glEnable(GL_LIGHTING);  
 }   
+
 void drawInfoHUD(int w, int h) {
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
@@ -108,56 +149,73 @@ void drawInfoHUD(int w, int h) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
 } 
+
 void renderInfoScreen() {
     if(currentInfoIndex > 10) currentInfoIndex = 0; 
     if(currentInfoIndex < 0) currentInfoIndex = 10;
     int w = WIDTH, h = HEIGHT;
     glViewport(0, 0, w, h); 
-    glMatrixMode(GL_PROJECTION); glLoadIdentity(); gluPerspective(45, (float)w/h, 0.1, 500);
-    glMatrixMode(GL_MODELVIEW); glLoadIdentity(); gluLookAt(0, 0, 30, 0, 0, 0, 0, 1, 0); 
+    glMatrixMode(GL_PROJECTION); glLoadIdentity(); 
+    gluPerspective(45, (float)w/h, 0.1, 500);
+    glMatrixMode(GL_MODELVIEW); glLoadIdentity(); 
+    gluLookAt(0, 0, 30, 0, 0, 0, 0, 1, 0); 
+    
     drawBackground();
+
     glPushMatrix();  
     float planetX = (w > 800) ? 8.5f : 6.0f;
     glTranslatef(planetX, 0.0, 0.0); 
     drawInfoPreview(currentInfoIndex); 
     glPopMatrix(); 
-    glDisable(GL_LIGHTING); glDisable(GL_DEPTH_TEST);
+    
+    glDisable(GL_LIGHTING); 
+    glDisable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION); glLoadIdentity(); gluOrtho2D(0, w, 0, h);
     glMatrixMode(GL_MODELVIEW); glLoadIdentity();  
+    
     float boxX = 20, boxY = 85, boxW = w/2.2, boxH = h - 170;
     drawGlassBox(boxX, boxY, boxW, boxH);
+    
     CelestialBodyInfo info = db[currentInfoIndex]; 
     float textX = boxX + 25; 
     float cursorY = boxY + boxH - 45;  
+    
     drawStrokeText(textX, cursorY, 0, info.name, 0.35, 1.0, 0.9, 0.0, 3.0); 
     cursorY -= 40;
     glColor3f(1.0f, 1.0f, 1.0f);
     glRasterPos2f(textX, cursorY);
     for (const char* c = info.type; *c != '\0'; c++) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+    
     cursorY -= 20;  
     glLineWidth(2.0); glBegin(GL_LINES); glColor3f(0.0, 1.0, 1.0); 
     glVertex2f(textX, cursorY); glVertex2f(boxX + boxW - 30, cursorY); 
     glEnd();
+    
     float gap = (h > 600) ? 30 : 25; 
     cursorY -= 40;  
     glColor3f(1.0f, 0.6f, 0.0f); 
     glRasterPos2f(textX, cursorY);
     for (const char* c = "[ PHYSICAL DATA ]"; *c != '\0'; c++) glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
+    
     cursorY -= gap;
     drawInfoRow(textX, cursorY, "Radius:", info.realRadius); cursorY -= gap;
     drawInfoRow(textX, cursorY, "Gravity:", info.gravity); cursorY -= gap;
     drawInfoRow(textX, cursorY, "Temp:", info.realTemp); cursorY -= gap + 10; 
+    
     glColor3f(1.0f, 0.6f, 0.0f); 
     glRasterPos2f(textX, cursorY);
     for (const char* c = "[ ORBITAL DATA ]"; *c != '\0'; c++) glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
+    
     cursorY -= gap;
     drawInfoRow(textX, cursorY, "Dist Sun:", info.distFromSun); cursorY -= gap;
     drawInfoRow(textX, cursorY, "Year:", info.orbitPeriod); cursorY -= gap;
     drawInfoRow(textX, cursorY, "Day:", info.rotation); cursorY -= gap;
     drawInfoRow(textX, cursorY, "Moons:", info.moons); cursorY -= gap + 20; 
+    
     glColor3f(0.0f, 1.0f, 0.0f);
     glRasterPos2f(textX, cursorY);
     for (const char* c = "QUICK FACT:"; *c != '\0'; c++) glutBitmapCharacter(GLUT_BITMAP_9_BY_15, *c);
+    
     cursorY -= 25; 
     glColor3f(1.0f, 1.0f, 1.0f);
     char desc[300]; strcpy(desc, info.description);
@@ -182,6 +240,8 @@ void renderInfoScreen() {
             cursorY -= 25;
         }
     }
+    
     drawInfoHUD(w, h);
-    glEnable(GL_DEPTH_TEST); glEnable(GL_LIGHTING);
+    glEnable(GL_DEPTH_TEST); 
+    glEnable(GL_LIGHTING);
 }
