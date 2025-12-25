@@ -1,4 +1,3 @@
-
 #include "simulation.h"
 #include "game.h"
 #include "info.h"
@@ -42,10 +41,18 @@ void renderMenus() {
         glEnd();
         glDisable(GL_BLEND); 
         float footerX = (WIDTH / 2) - 180; 
-        glColor3f(0.0, 0.9, 1.0); 
-        drawText(footerX, 15, 0, "Developed by Team C", GLUT_BITMAP_HELVETICA_12);
-        glColor3f(0.7, 0.7, 0.7); 
-        drawText(footerX + 130, 15, 0, "|  2025 |  All Rights Reserved", GLUT_BITMAP_HELVETICA_12);
+        glColor3f(0.0, 0.9, 1.0);  
+int windowWidth = glutGet(GLUT_WINDOW_WIDTH);
+const char* line1 = "Developed By Afra & Sumaiya";
+int line1Width = glutBitmapLength(GLUT_BITMAP_8_BY_13, (const unsigned char*)line1);
+float x1 = (windowWidth / 2.0f) - (line1Width / 2.0f);
+glColor3f(1.0f, 0.7f, 0.0f);  
+drawText(x1, 18, 0, line1, GLUT_BITMAP_8_BY_13); 
+const char* line2 = "2025 | All Rights Reserved";
+int line2Width = glutBitmapLength(GLUT_BITMAP_HELVETICA_10, (const unsigned char*)line2);
+float x2 = (windowWidth / 2.0f) - (line2Width / 2.0f);
+glColor3f(0.4f, 0.6f, 1.0f);  
+drawText(x2, 5, 0, line2, GLUT_BITMAP_HELVETICA_10);
     } else if (currentState == MENU) {
         drawGlassBox(bx, (HEIGHT/2) - 225, 600, 450);
         float menuBy = (HEIGHT/2) - 225;
