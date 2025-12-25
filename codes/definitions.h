@@ -11,7 +11,7 @@
 extern int WIDTH;
 extern int HEIGHT;
 const float PI = 3.1415926535;
-const int STAR_COUNT = 1000; 
+const int STAR_COUNT = 800; 
 enum State { WELCOME, MENU, INFO, SOLAR_SIM, SUN_EARTH_MOON, GAME_DIFFICULTY, GAME, GAME_OVER }; 
 enum PlanetID {
     TEX_SUN = 0, TEX_MERCURY, TEX_VENUS, TEX_EARTH, TEX_MOON,
